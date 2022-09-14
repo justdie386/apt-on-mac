@@ -1,0 +1,54 @@
+#!/bin/sh
+
+echo "This is the script to setup procursus for macOS! Please enter your password if you are prompted to do so."
+
+archType=$(uname -m)
+if [ "$archType" == "x86_64" ]; then
+    echo "Intel Mac Detected!"
+    macType=intel
+    else if [ "$archType" == "arm64" ]; then
+    echo "arm64 Mac Detected!"
+    macType=arm64
+fi
+fi
+
+mkdir -p procursusNeeds
+echo "Downloading dependencies and bootstrap..."
+curl https://cameronkatri.com/zstd -o procursusNeeds/zstd >/dev/null 2>&1
+if [[ -f "procursusNeeds/zstd" ]]; then 
+    echo "zstd downloaded!"
+fi
+
+chmod +x procursusNeeds/zstd
+
+if [[ $archType == "x86_64" ]]; then
+    curl https://cdn.discordapp.com/attachments/763074782220517467/819588655403499560/bootstrap.tar.zst -o procursusNeeds/bootstrap.tar.zst >/dev/null 2>&1
+else if [[ $archType == "arm64" ]]; then
+    curl https://cdn.discordapp.com/attachments/763074782220517467/819588605999317022/bootstrap.tar.zst -o procursusNeeds/bootstrap.tar.zst >/dev/null 2>&1
+    fi 
+    fi
+
+if [[ -f "procursusNeeds/bootstrap.tar.zst" ]]; then
+    echo "bootstrap downloaded!"
+    ./procursusNeeds/zstd -df procursusNeeds/bootstrap.tar.zst 
+    if [[ -f "procursusNeeds/bootstrap.tar" ]]; then
+        echo "bootstrap decompressed!\nWill now try to bootstrap...[Enter your password if necessary]"
+        sudo tar -xvf procursusNeeds/bootstrap.tar -C / 
+fi
+fi 
+echo "Doing final touches.."
+echo "export PATH=/usr/local/bin:/opt/procursus/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> ~/.zshrc
+source ~/.zshrc
+
+checkApt=$(which apt)
+if [[ $checkApt == "/opt/procursus/bin/apt" ]]; then
+echo "APT Has successfuly been installed! Running some stuff just to be safe.."
+sudo apt update
+sudo apt dist-upgrade
+echo "You now have APT on macOS. Enjoy!"
+echo "Ignore Errors along the lines of [dpkg exited unexpectedly] or [no user _apt], this only occurs on upgrade of apt or first install of apt"
+echo "### Remember to Relaunch Terminal ###
+else
+echo "APT Not successfully updated. APT path is SUPPOSED to be (/opt/procursus/bin/apt), but instead its ($checkApt)"
+fi
+rm -rf procursusNeeds
